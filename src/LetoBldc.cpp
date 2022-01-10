@@ -294,11 +294,11 @@ uint16_t LETO_BLDC_Motor::get_D_Gain() {
 //
 //
 void LETO_BLDC_Motor::writeRecommendPID_Data() {
-  set_P_Gain(0x800);
+  set_P_Gain(0x600);
   // delay(5);
   set_I_Gain(0x25);
   // delay(5);
-  set_D_Gain(0x1500);
+  set_D_Gain(0x1000);
   // delay(5);
   get_P_Gain();
   get_I_Gain();
