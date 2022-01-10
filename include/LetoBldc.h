@@ -22,10 +22,11 @@
 #define CMD_setFirstEnd2MechEndstop     0x12
 #define CMD_setMechMotorRange       0x13
 #define CMD_setContinuous           0x19
-#define CMD_getCpmtomipis           0x1A
+#define CMD_getContinuous           0x1A
 #define CMD_getFirmwareVersion      0x1B
 #define CMD_wakeUp                  0x1C
 #define CMD_setSleepPowUpMode       0x1D
+#define CMD_getEncoderReading       0x1E
 #define CMD_saveSetting2Ash         0x23
 #define CMD_reloadFactoryDefault    0x24
 #define CMD_getSleepPowUpMode       0x2F
@@ -63,6 +64,7 @@ uint16_t targetLocation;
 void begin();
 void resetMotor();
 uint16_t getCurrentLocation();
+uint16_t LETO_BLDC_Motor::getEncoderReading();
 uint16_t setTravelVelocity(uint16_t _travelVelocity);
 void goToTargetLocation();
 uint8_t getIsMoving();
@@ -73,10 +75,31 @@ void getMotorSeiral();
 uint8_t isCalibrationComplete();
 void gotoAbsoluteLocation(uint16_t _targetLocation);
 void gotoRelativeLocation(uint16_t _targetLocation);
+void gotoAbsoluteLocationAtSpeed(uint16_t _targetLocation, uint16_t _speed);
+void gotoRelativeLocationAtSpeed(uint16_t _targetLocation, uint16_t _speed);
 bool finishedHoming();
+uint8_t isMotorMoving();
 
 uint16_t getTemperature();
+uint8_t getUseHallSensor();
+void setUseHallSensor(bool _hallSensor);
+void saveSettingsToFlash();
 
+void set_P_Gain(uint16_t _gainData);
+uint16_t get_P_Gain();
+void set_I_Gain(uint16_t _gainData);
+uint16_t get_I_Gain();
+void set_D_Gain(uint16_t _gainData);
+uint16_t get_D_Gain();
+
+void setFirstEndstop(uint16_t _firstEndStop);
+uint16_t getFirstEndstop();
+
+void writeRecommendPID_Data();
+void loadFactoryData();
+
+uint8_t getContinuous();
+void setContinuous(bool _contiouous);
 
 private:
 uint8_t tx_data[4];
@@ -84,5 +107,6 @@ uint8_t rx_data[6];
 
 void TitanWrite(uint8_t command,  int n_uint8_ts);
 void TitanRead(uint8_t command,  int n_uint8_ts);
+
 };
 #endif
