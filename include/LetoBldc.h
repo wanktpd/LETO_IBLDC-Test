@@ -31,6 +31,8 @@
 #define CMD_reloadFactoryDefault    0x24
 #define CMD_getSleepPowUpMode       0x2F
 #define CMD_getIsSleeping       0x30
+#define CMD_setPID_I_IdleGain       0x35
+#define CMD_getPID_I_IdleGain       0x36
 #define CMD_gotoRelatPos360       0x40
 #define CMD_gotoRelatPosAtSpeed       0x41
 #define CMD_gotoAbsolPosAtSpeed       0x42
@@ -89,13 +91,15 @@ void set_P_Gain(uint16_t _gainData);
 uint16_t get_P_Gain();
 void set_I_Gain(uint16_t _gainData);
 uint16_t get_I_Gain();
+void set_I_IdleGain(uint16_t _gainData);
+uint16_t get_I_IdleGain();
 void set_D_Gain(uint16_t _gainData);
 uint16_t get_D_Gain();
 
 void setFirstEndstop(uint16_t _firstEndStop);
 uint16_t getFirstEndstop();
 
-void writeRecommendPID_Data();
+void writeRecommendPID_Data(int _idx = 0);
 void loadFactoryData();
 
 uint8_t getContinuous();

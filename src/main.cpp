@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <LetoBldc.h>
+#include <Wire.h>
 
 #define LENGTH 240
 // #define LENGTH 230
@@ -63,47 +64,58 @@ void setup() {
   vAxialMotor.begin();
   delay(5000);
 
-  Serial.printf("//Pre Encoder Reading: v: %d, h: %d\n",
+  Serial.printf("// Pre Encoder Reading: v: %d, h: %d\n",
                 vAxialMotor.getEncoderReading(),
                 hAxialMotor.getEncoderReading());
 
-  hAxialMotor.setUseHallSensor(false);
+  // hAxialMotor.setUseHallSensor(false);
   if (hAxialMotor.getUseHallSensor() == 0) {
-    Serial.println("//H motor is not using Hall sensor");
+    Serial.println("// H motor is not using Hall sensor");
+    // hAxialMotor.setUseHallSensor(true);
+    // Serial.println("// H motor is set to using Hall sensor");
+    // hAxialMotor.saveSettingsToFlash();
+
   } else {
-    Serial.println("//H motor is using Hall sensor");
+    Serial.println("// H motor is using Hall sensor");
     hAxialMotor.setUseHallSensor(false);
-    Serial.println("//H motor is set to not using Hall sensor");
+    Serial.println("// H motor is set to not using Hall sensor");
     hAxialMotor.saveSettingsToFlash();
   }
   // vAxialMotor.loadFactoryData();
   // hAxialMotor.loadFactoryData();
 
   if (vAxialMotor.getUseHallSensor() == 0) {
-    Serial.println("//V motor is not using Hall sensor");
+    // Serial.println("// V motor is not using Hall sensor");
+    // vAxialMotor.setUseHallSensor(true);
+    // Serial.println("// V motor is set to using Hall sensor");
+    // vAxialMotor.saveSettingsToFlash();
 
   } else {
-    Serial.println("//V motor is using Hall sensor");
+    Serial.println("// V motor is using Hall sensor");
     vAxialMotor.setUseHallSensor(false);
-    Serial.println("//V motor set to not using Hall sensor");
+    Serial.println("// V motor set to not using Hall sensor");
     vAxialMotor.saveSettingsToFlash();
   }
 
   if (hAxialMotor.getContinuous() == 0) {
-    hAxialMotor.setContinuous(true);
+    // hAxialMotor.setContinuous(true);
+    // Serial.printf("// H motor is in continuous mode\n");
   } else {
-    Serial.printf("//H motor is in continuous mode\n");
+    hAxialMotor.setContinuous(false);
+    Serial.printf("// H motor is in limited mode\n");
   }
   if (vAxialMotor.getContinuous() == 0) {
-    vAxialMotor.setContinuous(true);
+    // vAxialMotor.setContinuous(true);
+    // Serial.printf("// V motor is in coutinuous mode\n");
   } else {
-    Serial.printf("//V motor is in continuous mode\n");
+    vAxialMotor.setContinuous(false);
+    Serial.printf("// V motor is in limited mode\n");
   }
 
   hAxialMotor.getMotorFirmwareVersion();
   vAxialMotor.getMotorFirmwareVersion();
 
-  Serial.println("//Wakeup Motor");
+  Serial.println("// Wakeup Motor");
   hAxialMotor.wakeupMotor();
   delay(100);
   vAxialMotor.wakeupMotor();
@@ -120,7 +132,7 @@ void setup() {
   }
 
   delay(2000);
-  Serial.printf("//Encoder Reading: v: %d, h: %d\r\n",
+  Serial.printf("// Encoder Reading: v: %d, h: %d\r\n",
                 vAxialMotor.getEncoderReading(),
                 hAxialMotor.getEncoderReading());
 
@@ -131,18 +143,21 @@ void setup() {
   // vAxialMotor.getFirstEndstop();
 
   // hAxialMotor.loadFactoryData();
-  vAxialMotor.writeRecommendPID_Data();
-  // vAxialMotor.get_I_Gain();
-  // vAxialMotor.get_P_Gain();
-  // vAxialMotor.get_D_Gain();
+  // vAxialMotor.writeRecommendPID_Data(2);
+  vAxialMotor.get_P_Gain();
+  vAxialMotor.get_I_Gain();
+  vAxialMotor.get_I_IdleGain();
+  vAxialMotor.get_D_Gain();
 
-  hAxialMotor.writeRecommendPID_Data();
-  // hAxialMotor.get_I_Gain();
-  // hAxialMotor.get_P_Gain();
-  // hAxialMotor.get_D_Gain();
+  // hAxialMotor.writeRecommendPID_Data(1);
+  hAxialMotor.get_P_Gain();
+  hAxialMotor.get_I_Gain();
+  // hAxialMotor.set_I_IdleGain(1234);
+  hAxialMotor.get_I_IdleGain();
+  hAxialMotor.get_D_Gain();
 
-  // hAxialMotor.gotoAbsoluteLocationAtSpeed(1000, targetSpeed);
-  vAxialMotor.gotoAbsoluteLocationAtSpeed(1500, targetSpeed);
+  // hAxialMotor.gotoRelativeLocationAtSpeed(1000, targetSpeed);
+  vAxialMotor.gotoRelativeLocationAtSpeed(1500, targetSpeed);
 
   // Serial.println("power cycle motor ");
   // delay(10000);
@@ -167,27 +182,45 @@ void setup() {
   // vAxialMotor.writeRecommendPID_Data();
   // hAxialMotor.writeRecommendPID_Data();
 
-  vAxialMotor.gotoAbsoluteLocationAtSpeed(10, targetSpeed);
-  hAxialMotor.gotoAbsoluteLocationAtSpeed(10, targetSpeed);
+
+  vAxialMotor.gotoRelativeLocationAtSpeed(100, targetSpeed);
+  while (vAxialMotor.isMotorMoving() != 0) {
+    Serial.printf("V: %d\r\n", vAxialMotor.getEncoderReading());
+  }
+  hAxialMotor.gotoRelativeLocationAtSpeed(100, targetSpeed);
+  while (hAxialMotor.isMotorMoving() != 0) {
+    Serial.printf("H: %d\r\n", hAxialMotor.getEncoderReading());
+  }
   delay(5000);
   Serial.printf(
-      "//Motor Speed Setup(count/second. 65536 counts per revolution): %d\r\n",
+      "// Motor Speed Setup(count/second. 65536 counts per revolution): %d\r\n",
       targetSpeed);
-  Serial.printf("//Direction\tMotor\tScanCounter\tEncoderReading\tTime(ms)\r\n");
+  Serial.printf(
+      "// Direction\tMotor\tScanCounter\tEncoderReading\tTime(ms)\r\n");
+
+
+  // while (1) {
+  //   hAxialMotor.gotoRelativeLocationAtSpeed(100, targetSpeed);
+  //   Serial.println(millis());
+  //   delay(1000);
+  // }
 }
 
 void loop() {
 
-  if (scanCounter < 10) {
+  if (scanCounter < 50) {
+    Serial.printf("// Encoder Reading: v: %d, h: %d\n",
+                  vAxialMotor.getEncoderReading(),
+                  hAxialMotor.getEncoderReading());
     scanCounter++;
-    vAxialMotor.gotoAbsoluteLocationAtSpeed(
+    vAxialMotor.gotoRelativeLocationAtSpeed(
         AccelectrationRange + ScanRange + DecelectrationRange, targetSpeed);
-    mainGlobalTimer1 = millis() + 5000;
+    mainGlobalTimer1 = millis() + 10000;
     // Serial.printf("Motor running status at start: %d\n",
     //               vAxialMotor.isMotorMoving());
     tempCooridinate = vAxialMotor.getEncoderReading();
     tempTimer1 = millis();
-
+    delay(200);
     while (vAxialMotor.isMotorMoving() != 0) {
       Serial.printf("Forward, V, %d, %d, %d\r\n", scanCounter,
                     vAxialMotor.getEncoderReading() - tempCooridinate,
@@ -201,15 +234,16 @@ void loop() {
       }
       // delay(2);
     }
-    delay(2000);
+    delay(1000);
     mainGlobalTimer1 = millis() + 5000;
 
-    vAxialMotor.gotoAbsoluteLocationAtSpeed(10, 0xFFFF - targetSpeed);
+    vAxialMotor.gotoRelativeLocationAtSpeed(10, 0xFFFF - targetSpeed);
     delay(100);
     // Serial.printf("Motor running status in between: %d\n",
     //               vAxialMotor.isMotorMoving());
     tempCooridinate = vAxialMotor.getEncoderReading();
     tempTimer1 = millis();
+    delay(200);
 
     while (vAxialMotor.isMotorMoving() != 0) {
       // delay(2);
@@ -227,10 +261,10 @@ void loop() {
     // Serial.printf("Motor running status return: %d\n",
     //               vAxialMotor.isMotorMoving());
 
-    delay(2000);
-    //Serial.printf("Sleeping: %d\n", vAxialMotor.getIsSleeping());
+    delay(1000);
+    // Serial.printf("Sleeping: %d\n", vAxialMotor.getIsSleeping());
 
-    hAxialMotor.gotoAbsoluteLocationAtSpeed(
+    hAxialMotor.gotoRelativeLocationAtSpeed(
         AccelectrationRange + ScanRange + DecelectrationRange, targetSpeed);
     mainGlobalTimer1 = millis() + 5000;
     // Serial.printf("Motor running status at start: %d\n",
@@ -238,6 +272,7 @@ void loop() {
 
     tempCooridinate = hAxialMotor.getEncoderReading();
     tempTimer1 = millis();
+    delay(200);
     while (hAxialMotor.isMotorMoving() != 0) {
 
       Serial.printf("Forward, H, %d, %d, %d\r\n", scanCounter,
@@ -252,15 +287,16 @@ void loop() {
       }
       // delay(2);
     }
-    delay(2000);
+    delay(1000);
     mainGlobalTimer1 = millis() + 5000;
 
-    hAxialMotor.gotoAbsoluteLocationAtSpeed(10, 0xFFFF - targetSpeed);
+    hAxialMotor.gotoRelativeLocationAtSpeed(10, 0xFFFF - targetSpeed);
     delay(100);
     // Serial.printf("Motor running status in between: %d\n",
     //               hAxialMotor.isMotorMoving());
     tempCooridinate = hAxialMotor.getEncoderReading();
     tempTimer1 = millis();
+    delay(200);
     while (hAxialMotor.isMotorMoving() != 0) {
       // delay(2);
       Serial.printf("Return, H, %d, %d, %d\r\n", scanCounter,
