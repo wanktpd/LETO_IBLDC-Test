@@ -3,7 +3,10 @@
 #include <Wire.h>
 //
 //
-void LETO_BLDC_Motor::begin() { Wire.begin(); }
+void LETO_BLDC_Motor::begin() { 
+  Wire.setClock(100000);
+  Wire.begin(); 
+  }
 
 //
 //
@@ -200,10 +203,10 @@ void LETO_BLDC_Motor::TitanWrite(uint8_t command, int n_uint8_ts) {
     Wire.write(this->tx_data, n_uint8_ts);
   Wire.endTransmission();
   delayMicroseconds(300);
-  Serial.printf("W CMD: 0x%02X, Add: %d, \tData 0: %d,\tData 1: %d,\tData 2: "
-                "%d,\tData 3: %d\n",
-                command, I2C_addr, tx_data[0], tx_data[1], tx_data[2],
-                tx_data[3]);
+  // Serial.printf("W CMD: 0x%02X, Add: %d, \tData 0: %d,\tData 1: %d,\tData 2: "
+  //               "%d,\tData 3: %d\n",
+  //               command, I2C_addr, tx_data[0], tx_data[1], tx_data[2],
+  //               tx_data[3]);
 }
 
 void LETO_BLDC_Motor::TitanRead(uint8_t command, int n_uint8_ts) {
@@ -235,7 +238,7 @@ void LETO_BLDC_Motor::TitanRead(uint8_t command, int n_uint8_ts) {
 void LETO_BLDC_Motor::set_P_Gain(uint16_t _gainData) {
   tx_data[0] = (uint8_t)(_gainData >> 8 & 0xff);
   tx_data[1] = (uint8_t)(_gainData & 0xff);
-  Serial.printf("Write P Gain: %d\r\n", _gainData);
+  Serial.printf("Write P Gain: 0x%04X\r\n", _gainData);
   TitanWrite(CMD_setPID_P_Gain, 2);
 }
 
@@ -246,7 +249,7 @@ uint16_t LETO_BLDC_Motor::get_P_Gain() {
   uint16_t tempRecData = 0;
   TitanRead(CMD_getPID_P_Gain, 2);
   tempRecData = ((uint16_t)(rx_data[0])) << 8 + rx_data[1];
-  Serial.printf("// %c P Gain:%d\r\n", name[0], tempRecData);
+  Serial.printf("// %c P Gain:0x%04X\r\n", name[0], tempRecData);
   return tempRecData;
 }
 
@@ -256,7 +259,7 @@ uint16_t LETO_BLDC_Motor::get_P_Gain() {
 void LETO_BLDC_Motor::set_I_Gain(uint16_t _gainData) {
   tx_data[0] = (uint8_t)(_gainData >> 8 & 0xff);
   tx_data[1] = (uint8_t)(_gainData & 0xff);
-  Serial.printf("Write I Gain: %d\r\n", _gainData);
+  Serial.printf("Write I Gain: 0x%04X\r\n", _gainData);
   TitanWrite(CMD_setPID_I_Gain, 2);
 }
 
@@ -265,9 +268,10 @@ void LETO_BLDC_Motor::set_I_Gain(uint16_t _gainData) {
 //
 uint16_t LETO_BLDC_Motor::get_I_Gain() {
   uint16_t tempRecData = 0;
-  TitanRead(CMD_getPID_I_Gain, 2);
+  TitanRead(CMD_getPID_I_Gain, 4);
   tempRecData = (uint16_t)(rx_data[0]) << 8 + rx_data[1];
-  Serial.printf("// %c I Gain:%d\r\n", name[0], tempRecData);
+  Serial.printf("// %c I Gain:0x%04X\r\n", name[0], tempRecData);
+  Serial.printf("rx[3]:%d, rx[4]:0x%04X\r\n", rx_data[3],rx_data[4]);
   return tempRecData;
 }
 //
@@ -276,7 +280,7 @@ uint16_t LETO_BLDC_Motor::get_I_Gain() {
 void LETO_BLDC_Motor::set_I_IdleGain(uint16_t _gainData) {
   tx_data[0] = (uint8_t)(_gainData >> 8 & 0xff);
   tx_data[1] = (uint8_t)(_gainData & 0xff);
-  Serial.printf("Write I Idel Gain: %d\r\n", _gainData);
+  Serial.printf("Write I Idel Gain: 0x%04X\r\n", _gainData);
   TitanWrite(CMD_setPID_I_IdleGain, 2);
 }
 
@@ -287,7 +291,7 @@ uint16_t LETO_BLDC_Motor::get_I_IdleGain() {
   uint16_t tempRecData = 0;
   TitanRead(CMD_getPID_I_IdleGain, 2);
   tempRecData = (uint16_t)(rx_data[0]) << 8 + rx_data[1];
-  Serial.printf("// %c I Idel Gain:%d\r\n", name[0], tempRecData);
+  Serial.printf("// %c I Idel Gain:0x%04X\r\n", name[0], tempRecData);
   return tempRecData;
 }
 
@@ -297,7 +301,7 @@ uint16_t LETO_BLDC_Motor::get_I_IdleGain() {
 void LETO_BLDC_Motor::set_D_Gain(uint16_t _gainData) {
   tx_data[0] = (uint8_t)(_gainData >> 8 & 0xff);
   tx_data[1] = (uint8_t)(_gainData & 0xff);
-  Serial.printf("Write D Gain: %d\r\n", _gainData);
+  Serial.printf("Write D Gain: 0x%04X\r\n", _gainData);
 
   TitanWrite(CMD_setPID_D_Gain, 2);
 }
@@ -309,7 +313,7 @@ uint16_t LETO_BLDC_Motor::get_D_Gain() {
   uint16_t tempRecData = 0;
   TitanRead(CMD_getPID_D_Gain, 2);
   tempRecData = (uint16_t)(rx_data[0]) << 8 + rx_data[1];
-  Serial.printf("// %c D Gain:%d\r\n", name[0], tempRecData);
+  Serial.printf("// %c D Gain:0x%04X\r\n", name[0], tempRecData);
   return tempRecData;
 }
 
@@ -357,8 +361,8 @@ void LETO_BLDC_Motor::writeRecommendPID_Data(int _idx) {
   get_I_Gain();
   get_D_Gain();
 
-  saveSettingsToFlash();
-  delay(2100);
+  // saveSettingsToFlash();
+  // delay(2100);
 }
 
 //
