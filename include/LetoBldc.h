@@ -96,6 +96,9 @@ uint16_t get_I_IdleGain();
 void set_D_Gain(uint16_t _gainData);
 uint16_t get_D_Gain();
 
+bool getSleepOnPowerUpMode();
+void setSleepOnPowerUpMode(bool _powerOnSleep);
+
 void setFirstEndstop(uint16_t _firstEndStop);
 uint16_t getFirstEndstop();
 
