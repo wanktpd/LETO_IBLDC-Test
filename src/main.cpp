@@ -222,18 +222,18 @@ void setup()
 
   //***************************************************
 
-  // hAxialMotor.resetMotor();
-  // vAxialMotor.resetMotor();
+  hAxialMotor.resetMotor();
+  vAxialMotor.resetMotor();
 
-  // delay(1000);
-  // bool waitHoming = false;
-  // while (!waitHoming)
-  // {
-  //   waitHoming = vAxialMotor.finishedHoming() && hAxialMotor.finishedHoming();
-  //   delay(100);
-  //   Serial.printf("v: %d, h: %d\n", vAxialMotor.getEncoderReading(),
-  //                 hAxialMotor.getEncoderReading());
-  // }
+  delay(1000);
+  bool waitHoming = false;
+  while (!waitHoming)
+  {
+    waitHoming = vAxialMotor.finishedHoming() && hAxialMotor.finishedHoming();
+    delay(100);
+    Serial.printf("v: %d, h: %d\n", vAxialMotor.getEncoderReading(),
+                  hAxialMotor.getEncoderReading());
+  }
 
   delay(2000);
   Serial.printf("// Encoder Reading: v: %d, h: %d\tv target: \r\n",
