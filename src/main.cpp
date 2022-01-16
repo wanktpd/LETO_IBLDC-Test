@@ -16,6 +16,8 @@
 bool Write2FlashMemory_H = false;
 bool Write2FlashMemory_V = false;
 
+bool processSerialCommand = false;
+
 byte tx_data[4];
 byte rx_data[6];
 int dev_V_addr = 0x52 >> 1; // JP1 in zero position => 7 bit address of 0x28
@@ -59,6 +61,12 @@ uint16_t tempCooridinate = 0;
 
 void TitanWrite(byte address, byte command, byte *tx_data, int n_bytes);
 void TitanRead(int address, byte command, byte *rx_data, int n_bytes);
+
+void processSerialCMD();
+char receivedSerialCMD[10];
+uint8_t serialBitCounter = 0;
+
+bool startScanTest = false;
 
 void setup()
 {
@@ -141,7 +149,7 @@ void setup()
   }
 
   if (vAxialMotor.getContinuous() == 0)
-  {    
+  {
     Serial.printf("// V motor is in limited mode\r\n");
     // vAxialMotor.setContinuous(true);
     // Write2FlashMemory_V = true;
@@ -214,18 +222,18 @@ void setup()
 
   //***************************************************
 
-  hAxialMotor.resetMotor();
-  vAxialMotor.resetMotor();
+  // hAxialMotor.resetMotor();
+  // vAxialMotor.resetMotor();
 
-  delay(1000);
-  bool waitHoming = false;
-  while (!waitHoming)
-  {
-    waitHoming = vAxialMotor.finishedHoming() && hAxialMotor.finishedHoming();
-    delay(100);
-    Serial.printf("v: %d, h: %d\n", vAxialMotor.getEncoderReading(),
-                  hAxialMotor.getEncoderReading());
-  }
+  // delay(1000);
+  // bool waitHoming = false;
+  // while (!waitHoming)
+  // {
+  //   waitHoming = vAxialMotor.finishedHoming() && hAxialMotor.finishedHoming();
+  //   delay(100);
+  //   Serial.printf("v: %d, h: %d\n", vAxialMotor.getEncoderReading(),
+  //                 hAxialMotor.getEncoderReading());
+  // }
 
   delay(2000);
   Serial.printf("// Encoder Reading: v: %d, h: %d\tv target: \r\n",
@@ -314,8 +322,8 @@ void setup()
 
 void loop()
 {
-
-  if (scanCounter < 50)
+  processSerialCMD();
+  if (scanCounter < 50 && startScanTest)
   {
     Serial.printf("// Encoder Reading: v: %d, h: %d\n",
                   vAxialMotor.getEncoderReading(),
@@ -406,7 +414,7 @@ void loop()
     delay(1000);
     mainGlobalTimer1 = millis() + 5000;
 
-    hAxialMotor.gotoAbsoluteLocationAtSpeed(20,  0xFFFF - targetSpeed);
+    hAxialMotor.gotoAbsoluteLocationAtSpeed(20, 0xFFFF - targetSpeed);
     delay(100);
     // Serial.printf("Motor running status in between: %d\n",
     //               hAxialMotor.isMotorMoving());
@@ -487,5 +495,149 @@ void TitanRead(int address, byte command, byte *rx_data, int n_bytes)
   while (Wire.available())
   {
     *rx_data++ = Wire.read();
+  }
+}
+
+//
+// Serial command need to start from "$" followed by motor type "V" or "P" upper case only to change PID
+// "$S" Stop motor Run
+// "$C" Clear test counter
+// "$R" Start test Run
+// "$W" Wrire data to flash memory W followed by motor type
+// "$GVP" Get motor Gain
+
+void processSerialCMD()
+{
+  while (Serial.available())
+  {
+    char tempRead = Serial.read();
+    // Serial.print(tempRead);
+    if (tempRead == '$')
+    {
+      serialBitCounter = 0;
+      tempRead = Serial.read();
+    }
+    if (tempRead != '\r' && tempRead != '\n')
+    {
+      receivedSerialCMD[serialBitCounter++] = tempRead;
+      if (serialBitCounter > 9)
+      {
+        serialBitCounter = 0;
+      }
+      // Serial.println(receivedSerialCMD);
+    }
+    else if (tempRead == '\r')
+    {
+      receivedSerialCMD[serialBitCounter] = '\0';
+      Serial.printf("New Command: %s\r\n", receivedSerialCMD);
+      if (receivedSerialCMD[0] == 'P')
+      {
+        uint16_t newPGain = atoi(receivedSerialCMD + 2);
+        Serial.printf("P Command: %s, data: %d\r\n", receivedSerialCMD, newPGain);
+        if (receivedSerialCMD[1] == 'V')
+        {
+          vAxialMotor.set_P_Gain(newPGain);
+          vAxialMotor.get_P_Gain();
+        }
+        if (receivedSerialCMD[1] == 'H')
+        {
+          hAxialMotor.set_P_Gain(newPGain);
+          hAxialMotor.get_P_Gain();
+        }
+      }
+
+      if (receivedSerialCMD[0] == 'D')
+      {
+        uint16_t newPGain = atoi(receivedSerialCMD + 2);
+        if (receivedSerialCMD[1] == 'V')
+        {
+          vAxialMotor.set_D_Gain(newPGain);
+          vAxialMotor.get_D_Gain();
+        }
+        if (receivedSerialCMD[1] == 'H')
+        {
+          hAxialMotor.set_D_Gain(newPGain);
+          hAxialMotor.get_D_Gain();
+        }
+      }
+
+      if (receivedSerialCMD[0] == 'I')
+      {
+        uint16_t newPGain = atoi(receivedSerialCMD + 2);
+        if (receivedSerialCMD[1] == 'V')
+        {
+          vAxialMotor.set_I_Gain(newPGain);
+          vAxialMotor.get_I_Gain();
+        }
+        if (receivedSerialCMD[1] == 'H')
+        {
+          hAxialMotor.set_I_Gain(newPGain);
+          hAxialMotor.get_I_Gain();
+        }
+      }
+
+      if (receivedSerialCMD[0] == 'S')
+      {
+        startScanTest = false;
+      }
+
+      if (receivedSerialCMD[0] == 'R')
+      {
+        startScanTest = true;
+      }
+
+      if (receivedSerialCMD[0] == 'C')
+      {
+        scanCounter = 0;
+      }
+
+      if (receivedSerialCMD[0] == 'G')
+      {
+        if(receivedSerialCMD[1] == 'H')
+        {
+          if(receivedSerialCMD[2] == 'P')
+          {
+            hAxialMotor.get_P_Gain();            
+          }          
+          if(receivedSerialCMD[2] == 'I')
+          {
+            hAxialMotor.get_I_Gain();
+          }          
+          if(receivedSerialCMD[2] == 'D')
+          {
+            hAxialMotor.get_D_Gain();
+          }          
+        }
+
+        if(receivedSerialCMD[1] == 'V')
+        {
+          if(receivedSerialCMD[2] == 'P')
+          {
+            vAxialMotor.get_P_Gain();            
+          }          
+          if(receivedSerialCMD[2] == 'I')
+          {
+            vAxialMotor.get_I_Gain();
+          }          
+          if(receivedSerialCMD[2] == 'D')
+          {
+            vAxialMotor.get_D_Gain();
+          }          
+        }
+
+      }
+
+      if (receivedSerialCMD[0] == 'W')
+      {
+        if (receivedSerialCMD[1] == 'V')
+        {
+          vAxialMotor.saveSettingsToFlash();
+        }
+        if (receivedSerialCMD[1] == 'H')
+        {
+          hAxialMotor.saveSettingsToFlash();
+        }
+      }
+    }
   }
 }
