@@ -234,7 +234,7 @@ void LETO_BLDC_Motor::TitanWrite(uint8_t command, int n_uint8_ts)
   if (n_uint8_ts > 0)
     Wire.write(this->tx_data, n_uint8_ts);
   Wire.endTransmission();
-  delayMicroseconds(300);
+  // delayMicroseconds(300);
   // Serial.printf("W CMD: 0x%02X, Add: %d, \tData 0: %d,\tData 1: %d,\tData 2: "
   //               "%d,\tData 3: %d\n",
   //               command, I2C_addr, tx_data[0], tx_data[1], tx_data[2],
@@ -250,7 +250,7 @@ void LETO_BLDC_Motor::TitanRead(uint8_t command, int n_uint8_ts)
   uint32_t __ReadTimeOut = millis() + 100;
   uint8_t _datadata = 0;
   // Serial.printf("R CMD: 0x%02X, Addr: %d ----->\n", command, this->I2C_addr);
-  delayMicroseconds(100);
+  // delayMicroseconds(100);
   Wire.requestFrom(this->I2C_addr, n_uint8_ts);
   // Serial.print("Rx Data:");
   while (Wire.available())

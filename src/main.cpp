@@ -505,6 +505,7 @@ void TitanRead(int address, byte command, byte *rx_data, int n_bytes)
 // "$R" Start test Run
 // "$W" Wrire data to flash memory W followed by motor type
 // "$GVP" Get motor Gain
+// "RSV" reset V motor
 
 void processSerialCMD()
 {
@@ -583,7 +584,21 @@ void processSerialCMD()
 
       if (receivedSerialCMD[0] == 'R')
       {
-        startScanTest = true;
+        if (receivedSerialCMD[1] == 'S')
+        {
+          if (receivedSerialCMD[2] == 'V')
+          {
+            vAxialMotor.resetMotor();
+          }
+          else if (receivedSerialCMD[2] == 'H')
+          {
+            hAxialMotor.resetMotor();
+          }
+        }
+        else
+        {
+          startScanTest = true;
+        }
       }
 
       if (receivedSerialCMD[0] == 'C')
@@ -593,38 +608,37 @@ void processSerialCMD()
 
       if (receivedSerialCMD[0] == 'G')
       {
-        if(receivedSerialCMD[1] == 'H')
+        if (receivedSerialCMD[1] == 'H')
         {
-          if(receivedSerialCMD[2] == 'P')
+          if (receivedSerialCMD[2] == 'P')
           {
-            hAxialMotor.get_P_Gain();            
-          }          
-          if(receivedSerialCMD[2] == 'I')
+            hAxialMotor.get_P_Gain();
+          }
+          if (receivedSerialCMD[2] == 'I')
           {
             hAxialMotor.get_I_Gain();
-          }          
-          if(receivedSerialCMD[2] == 'D')
+          }
+          if (receivedSerialCMD[2] == 'D')
           {
             hAxialMotor.get_D_Gain();
-          }          
+          }
         }
 
-        if(receivedSerialCMD[1] == 'V')
+        if (receivedSerialCMD[1] == 'V')
         {
-          if(receivedSerialCMD[2] == 'P')
+          if (receivedSerialCMD[2] == 'P')
           {
-            vAxialMotor.get_P_Gain();            
-          }          
-          if(receivedSerialCMD[2] == 'I')
+            vAxialMotor.get_P_Gain();
+          }
+          if (receivedSerialCMD[2] == 'I')
           {
             vAxialMotor.get_I_Gain();
-          }          
-          if(receivedSerialCMD[2] == 'D')
+          }
+          if (receivedSerialCMD[2] == 'D')
           {
             vAxialMotor.get_D_Gain();
-          }          
+          }
         }
-
       }
 
       if (receivedSerialCMD[0] == 'W')
