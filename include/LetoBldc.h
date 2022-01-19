@@ -102,6 +102,9 @@ void setSleepOnPowerUpMode(bool _powerOnSleep);
 void setFirstEndstop(uint16_t _firstEndStop);
 uint16_t getFirstEndstop();
 
+void setMechanicalRange(uint16_t _mechanicalRange);
+uint16_t getMechanicalRange();
+
 void writeRecommendPID_Data(int _idx = 0);
 void loadFactoryData();
 

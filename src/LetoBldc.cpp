@@ -31,7 +31,7 @@ bool LETO_BLDC_Motor::finishedHoming()
   TitanRead(CMD_calibrationComplete, 1);
   if (rx_data[0] == 1)
   {
-    Serial.printf("%c Homing Completed\r\n", name[0]);
+    // Serial.printf("%c Homing Completed\r\n", name[0]);
     return true;
   }
   else if (rx_data[0] == 2)
@@ -57,7 +57,7 @@ void LETO_BLDC_Motor::gotoRelativeLocation(uint16_t _targetLocation)
   // Serial.println(tx_data[1]);
   // Serial.printf("%c, D0:%d, D1:%d, Relative Target: %d\r\n", this->name[0],
   //               this->tx_data[0], this->tx_data[1],
-  //               ((this->tx_data[1] << 8) + this->tx_data[0]));
+  //               ((this->tx_data[1] * 256) + this->tx_data[0]));
   TitanWrite(CMD_goToRelativeLocation, 2);
 }
 
@@ -110,7 +110,7 @@ void LETO_BLDC_Motor::getMotorFirmwareVersion()
   Serial.print(".");
   Serial.print(this->rx_data[1]);
   Serial.print(".");
-  Serial.print((this->rx_data[2] << 8) | this->rx_data[3]);
+  Serial.print((this->rx_data[2] * 256) | this->rx_data[3]);
   Serial.print("\r\n");
 }
 //
@@ -125,7 +125,7 @@ void LETO_BLDC_Motor::getMotorSeiral()
   Serial.print(".");
   Serial.print(this->rx_data[1]);
   Serial.print(".");
-  Serial.print((this->rx_data[2] << 8) | this->rx_data[3]);
+  Serial.print((this->rx_data[2] * 256) | this->rx_data[3]);
   Serial.print("\r\n");
 }
 
@@ -153,7 +153,7 @@ uint16_t LETO_BLDC_Motor::getCurrentLocation()
   uint16_t _returnData = 0;
   TitanRead(CMD_returnCurrentLocation, 2);
   _returnData =
-      (((uint16_t)this->rx_data[0]) << 8) + (uint16_t)(this->rx_data[1]);
+      (((uint16_t)this->rx_data[0]) * 256) + (uint16_t)(this->rx_data[1]);
   return _returnData;
 }
 
@@ -202,7 +202,7 @@ uint16_t LETO_BLDC_Motor::getEncoderReading()
   uint16_t tempReadings = 0;
   TitanRead(CMD_getEncoderReading, 2);
   delay(1);
-  tempReadings = (((uint16_t)rx_data[0]) << 8) + rx_data[1];
+  tempReadings = (((uint16_t)rx_data[0]) * 256) + rx_data[1];
   return tempReadings;
 }
 
@@ -216,7 +216,7 @@ void LETO_BLDC_Motor::saveSettingsToFlash()
 {
   TitanWrite(CMD_saveSetting2Ash, 0);
   Serial.printf("%c motor save flash memory\r\n", name[0]);
-  delay(2100);
+  delay(2500);
 }
 
 uint8_t LETO_BLDC_Motor::getIsMoving()
@@ -243,10 +243,10 @@ void LETO_BLDC_Motor::TitanWrite(uint8_t command, int n_uint8_ts)
 
 void LETO_BLDC_Motor::TitanRead(uint8_t command, int n_uint8_ts)
 {
+  uint8_t *_temp = this->rx_data;
   Wire.beginTransmission(this->I2C_addr);
   Wire.write(command);
   Wire.endTransmission();
-  uint8_t *_temp = this->rx_data;
   uint32_t __ReadTimeOut = millis() + 100;
   uint8_t _datadata = 0;
   // Serial.printf("R CMD: 0x%02X, Addr: %d ----->\n", command, this->I2C_addr);
@@ -256,8 +256,10 @@ void LETO_BLDC_Motor::TitanRead(uint8_t command, int n_uint8_ts)
   while (Wire.available())
   {
     _datadata = Wire.read();
-    // Serial.printf("%d,", _datadata);
+    // Serial.printf("R Data: %02X\r\n", _datadata);
     *_temp++ = _datadata;
+    // memcpy(_temp++,&_datadata,1);
+    // Serial.printf("rx_data: %02X,%02X,%02X,%02X\r\n", rx_data[0], rx_data[1],rx_data[3], rx_data[2]);
     if (__ReadTimeOut < millis())
     {
       Serial.println("I2C read timeout");
@@ -285,8 +287,8 @@ uint16_t LETO_BLDC_Motor::get_P_Gain()
 {
   uint16_t tempRecData = 0;
   TitanRead(CMD_getPID_P_Gain, 2);
-  tempRecData = ((uint16_t)(rx_data[0])) << 8 + rx_data[1];
-  Serial.printf("// %c P Gain:0x%04X\r\n", name[0], tempRecData);
+  tempRecData = (uint16_t)((rx_data[0]) * 256) + rx_data[1];
+  Serial.printf("// %c P Gain:0x%04X, %d\r\n", name[0],tempRecData , tempRecData);
   return tempRecData;
 }
 
@@ -308,8 +310,8 @@ uint16_t LETO_BLDC_Motor::get_I_Gain()
 {
   uint16_t tempRecData = 0;
   TitanRead(CMD_getPID_I_Gain, 2);
-  tempRecData = (uint16_t)(rx_data[0]) << 8 + rx_data[1];
-  Serial.printf("// %c I Gain:0x%04X\r\n", name[0], tempRecData);
+  tempRecData = (uint16_t)((rx_data[0]) * 256) + rx_data[1];
+  Serial.printf("// %c I Gain:0x%04X, %d\r\n", name[0],tempRecData , tempRecData);
   return tempRecData;
 }
 //
@@ -330,8 +332,8 @@ uint16_t LETO_BLDC_Motor::get_I_IdleGain()
 {
   uint16_t tempRecData = 0;
   TitanRead(CMD_getPID_I_IdleGain, 2);
-  tempRecData = (uint16_t)(rx_data[0]) << 8 + rx_data[1];
-  Serial.printf("// %c I Idel Gain:0x%04X\r\n", name[0], tempRecData);
+  tempRecData = (uint16_t)(rx_data[0]) * 256 + rx_data[1];
+  Serial.printf("// %c I Idel Gain:0x%04X, %d\r\n", name[0],tempRecData , tempRecData);
   return tempRecData;
 }
 
@@ -354,8 +356,8 @@ uint16_t LETO_BLDC_Motor::get_D_Gain()
 {
   uint16_t tempRecData = 0;
   TitanRead(CMD_getPID_D_Gain, 2);
-  tempRecData = (uint16_t)(rx_data[0]) << 8 + rx_data[1];
-  Serial.printf("// %c D Gain:0x%04X\r\n", name[0], tempRecData);
+  tempRecData = (uint16_t)((rx_data[0]) * 256) + rx_data[1];
+  Serial.printf("// %c D Gain:0x%04X, %d\r\n", name[0], tempRecData, tempRecData);
   return tempRecData;
 }
 
@@ -366,21 +368,21 @@ void LETO_BLDC_Motor::writeRecommendPID_Data(int _idx)
 
   switch (_idx)
   {
-  case 0:
-    set_P_Gain(0x03FB);
+  case 0: // H motor optimized PID
+    set_P_Gain(1700);
     // delay(5);
-    set_I_Gain(0x5);
+    set_I_Gain(16);
     // delay(5);
-    set_D_Gain(0x0080);
+    set_D_Gain(1800);
     // delay(5);
     break;
     /// H axial
-  case 1:
-    set_P_Gain(0x600);
+  case 1: // V motor optimized PID
+    set_P_Gain(2400);
     // delay(5);
-    set_I_Gain(0x10);
+    set_I_Gain(20);
     // delay(5);
-    set_D_Gain(0x900);
+    set_D_Gain(2000);
     // delay(5);
     break;
     /// V axial
@@ -389,7 +391,7 @@ void LETO_BLDC_Motor::writeRecommendPID_Data(int _idx)
     // delay(5);
     set_I_Gain(0x10);
     // delay(5);
-    set_D_Gain(0x1000);
+    set_D_Gain(0x1200);
     // delay(5);
     break;
 
@@ -472,11 +474,10 @@ void LETO_BLDC_Motor::setFirstEndstop(uint16_t _firstEndStop)
 uint16_t LETO_BLDC_Motor::getFirstEndstop()
 {
   TitanRead(CMD_getFirstEndstopDistance, 2);
-  uint16_t tempFirstStopData = rx_data[0] << 8 + rx_data[1];
+  uint16_t tempFirstStopData = rx_data[0] *256 + rx_data[1];
   Serial.printf("%c First endstop: %d\r\n", name[0], tempFirstStopData);
   return (tempFirstStopData);
 }
-
 
 //
 // True: power on sleep
@@ -490,7 +491,7 @@ void LETO_BLDC_Motor::setSleepOnPowerUpMode(bool _powerOnSleep)
   {
     tx_data[0] = 0;
   }
-  TitanWrite(CMD_setSleepPowUpMode,1);
+  TitanWrite(CMD_setSleepPowUpMode, 1);
 }
 
 //
@@ -499,12 +500,33 @@ void LETO_BLDC_Motor::setSleepOnPowerUpMode(bool _powerOnSleep)
 bool LETO_BLDC_Motor::getSleepOnPowerUpMode()
 {
   TitanRead(CMD_getSleepPowUpMode, 1);
-  if(rx_data[0] == 0)
+  if (rx_data[0] == 0)
   {
     return false;
   }
   else
   {
     return true;
-  }  
+  }
+}
+
+//
+//
+//
+void LETO_BLDC_Motor::setMechanicalRange(uint16_t _mechanicalRange)
+{
+  tx_data[0] = (uint8_t)(_mechanicalRange >> 8 & 0xff);
+  tx_data[1] = (uint8_t)(_mechanicalRange & 0xff);
+  TitanWrite(CMD_setMechMotorRange, 2);  
+}
+
+//
+//
+//
+uint16_t LETO_BLDC_Motor::getMechanicalRange()
+{
+  TitanRead(CMD_getMechMotorRange, 2);
+  uint16_t tempFirstStopData = rx_data[0] * 256  + rx_data[1];
+  Serial.printf("%c Motor MechanicalRange: %d\r\n", name[0], tempFirstStopData);
+  return (tempFirstStopData);
 }
