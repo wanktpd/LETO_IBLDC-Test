@@ -110,6 +110,7 @@ void loadFactoryData();
 
 uint8_t getContinuous();
 void setContinuous(bool _contiouous);
+void ClearRxData();
 
 private:
 uint8_t tx_data[4];

@@ -7,14 +7,14 @@
 
 #define targetSpeed 158
 #define ScanRange 273 // 1.5 degree rotation
-#define AccelectrationRange 300
+#define AccelectrationRange 200
 #define DecelectrationRange 200
-#define ScanStartPos_H 3000
+#define ScanStartPos_H 6000
 #define ScanStartPos_V 300
 
 #define V_Encoder_Ref
 #define H_Encoder_Ref
-#define PID_init 1
+#define PID_init 0
 
 bool Write2FlashMemory_H = false;
 bool Write2FlashMemory_V = false;
@@ -66,6 +66,7 @@ void TitanWrite(byte address, byte command, byte *tx_data, int n_bytes);
 void TitanRead(int address, byte command, byte *rx_data, int n_bytes);
 
 void processSerialCMD();
+bool checkI2CBus();
 char receivedSerialCMD[10];
 uint8_t serialBitCounter = 0;
 
@@ -95,12 +96,12 @@ void setup()
     vAxialMotor.get_I_Gain();
     vAxialMotor.get_D_Gain();
     vAxialMotor.setFirstEndstop(100);
-    vAxialMotor.setMechanicalRange(4500);
+    vAxialMotor.setMechanicalRange(5100);
     vAxialMotor.getMechanicalRange();
 
     vAxialMotor.saveSettingsToFlash();
 
-    delay(10000);
+    delay(5000);
 
     hAxialMotor.get_P_Gain();
     hAxialMotor.get_I_Gain();
@@ -111,11 +112,11 @@ void setup()
     hAxialMotor.get_I_Gain();
     hAxialMotor.get_D_Gain();
     hAxialMotor.setFirstEndstop(100);
-    hAxialMotor.setMechanicalRange(4500);
+    hAxialMotor.setMechanicalRange(7500);
     hAxialMotor.getMechanicalRange();
 
     hAxialMotor.saveSettingsToFlash();
-    delay(10000);
+    delay(5000);
 
     uint32_t eventTimer1 = millis() + 3000;
 
@@ -395,13 +396,17 @@ void loop()
       Serial.printf(
           "// Direction&MotorType\tScanCounter\tEncoderReading\tTime(ms)\r\n");
     }
+
+    checkI2CBus();
+    delay(1000);
+    mainGlobalTimer1 = millis() + 15000;
+
     vAxialMotor.gotoAbsoluteLocationAtSpeed(
         AccelectrationRange + ScanRange + DecelectrationRange + ScanStartPos_V, targetSpeed);
-    mainGlobalTimer1 = millis() + 15000;
     // Serial.printf("Motor running status at start: %d\n",
     //               vAxialMotor.isMotorMoving());
     tempCooridinate = vAxialMotor.getEncoderReading();
-    tempTimer1 = millis();
+    tempTimer1 = millis() + 200;
     delay(200);
     while (vAxialMotor.isMotorMoving() != 0)
     {
@@ -420,6 +425,8 @@ void loop()
       // delay(2);
     }
     delay(1000);
+    checkI2CBus();
+
     mainGlobalTimer1 = millis() + 15000;
 
     vAxialMotor.gotoAbsoluteLocationAtSpeed(ScanStartPos_V, 0xFFFF - targetSpeed);
@@ -427,7 +434,7 @@ void loop()
     // Serial.printf("Motor running status in between: %d\n",
     //               vAxialMotor.isMotorMoving());
     tempCooridinate = vAxialMotor.getEncoderReading();
-    tempTimer1 = millis();
+    tempTimer1 = millis() + 200;
     delay(200);
 
     while (vAxialMotor.isMotorMoving() != 0)
@@ -450,16 +457,17 @@ void loop()
     //               vAxialMotor.isMotorMoving());
 
     delay(1000);
+    checkI2CBus();
+    mainGlobalTimer1 = millis() + 15000;
     // Serial.printf("Sleeping: %d\n", vAxialMotor.getIsSleeping());
 
     hAxialMotor.gotoAbsoluteLocationAtSpeed(
         AccelectrationRange + ScanRange + DecelectrationRange + ScanStartPos_H, targetSpeed);
-    mainGlobalTimer1 = millis() + 15000;
     // Serial.printf("Motor running status at start: %d\n",
     //               hAxialMotor.isMotorMoving());
 
     tempCooridinate = hAxialMotor.getEncoderReading();
-    tempTimer1 = millis();
+    tempTimer1 = millis() + 200;
     delay(200);
     while (hAxialMotor.isMotorMoving() != 0)
     {
@@ -477,15 +485,16 @@ void loop()
       }
       // delay(2);
     }
-    delay(1000);
-    mainGlobalTimer1 = millis() + 15000;
 
+    delay(1000);
+    checkI2CBus();
+    mainGlobalTimer1 = millis() + 15000;
     hAxialMotor.gotoAbsoluteLocationAtSpeed(ScanStartPos_H, 0xFFFF - targetSpeed);
     delay(100);
     // Serial.printf("Motor running status in between: %d\n",
     //               hAxialMotor.isMotorMoving());
     tempCooridinate = hAxialMotor.getEncoderReading();
-    tempTimer1 = millis();
+    tempTimer1 = millis() + 200;
     delay(200);
     while (hAxialMotor.isMotorMoving() != 0)
     {
@@ -507,7 +516,7 @@ void loop()
     //               hAxialMotor.isMotorMoving());
     Serial.printf("// << ----- Scan %d ended ----->>\r\n", scanCounter);
 
-    delay(1000);
+    // delay(1000);
     // Serial.printf("Sleeping: %d\n", hAxialMotor.getIsSleeping());
 
     // if (mainGlobalTimer1 < millis()) {
@@ -665,6 +674,7 @@ void processSerialCMD()
           }
           else if (receivedSerialCMD[2] == 'T')
           {
+            // reset Teensy controller
             SCB_AIRCR = 0x05FA0004;
             // NVIC_SystemReset();
           }
@@ -766,5 +776,23 @@ void processSerialCMD()
         }
       }
     }
+  }
+}
+
+bool checkI2CBus()
+{
+  vAxialMotor.ClearRxData();
+  if (vAxialMotor.getEncoderReading())
+  {
+    return true;
+  }
+  else
+  {
+    Wire.end();
+    Serial.println("// I2C bus is not responding, the I2C controller has been reset.");
+    delay(100);
+    Wire.begin();
+    delay(100);
+    return false;
   }
 }
