@@ -82,7 +82,7 @@ void setup()
   vAxialMotor.name[0] = 'V';
 
   vAxialMotor.begin();
-  delay(800);
+  delay(5000);
 
   if (PID_init)
   {
